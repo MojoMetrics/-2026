@@ -1,496 +1,795 @@
-
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة التفوق التفاعلية - الاجتماعيات</title>
+    <title>MOJO - منصة التفوق التفاعلية | 1 BAC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+        
         body {
             font-family: 'Tajawal', sans-serif;
-            background-color: #fafaf9;
-            color: #292524;
+            background-color: #f8fafc;
+            color: #0f172a;
+            overflow-x: hidden;
         }
+
+        /* MOJO SHOWY WATERMARK */
+        .watermark-mojo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-size: 22vw;
+            font-weight: 900;
+            color: rgba(15, 23, 42, 0.03); /* Very subtle but huge */
+            pointer-events: none;
+            z-index: -1;
+            white-space: nowrap;
+            letter-spacing: -1vw;
+            text-transform: uppercase;
+        }
+
+        /* Chart Constraints */
         .chart-container {
             position: relative;
             width: 100%;
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
-            height: 40vh;
-            max-height: 384px;
+            height: 350px;
+            max-height: 400px;
         }
-        .lesson-btn.active-history {
-            background-color: #0284c7;
-            color: white;
-            border-color: #0284c7;
+        @media (max-width: 640px) {
+            .chart-container { height: 250px; }
         }
-        .lesson-btn.active-geography {
-            background-color: #16a34a;
-            color: white;
-            border-color: #16a34a;
-        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Glassmorphism Panels */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Tab Active States */
+        .tab-btn { transition: all 0.3s ease; }
+        .tab-btn.active-history { background-color: #0284c7; color: white; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); }
+        .tab-btn.active-geography { background-color: #16a34a; color: white; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4); }
+        .tab-btn.active-support { background: linear-gradient(45deg, #f59e0b, #e11d48, #9333ea); color: white; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4); }
+
+        .lesson-item.active {
+            background-color: #f1f5f9;
+            border-right-width: 4px;
+            font-weight: 700;
+        }
+        .lesson-item.active[data-domain="history"] { border-right-color: #0284c7; color: #0284c7; }
+        .lesson-item.active[data-domain="geography"] { border-right-color: #16a34a; color: #16a34a; }
+        .lesson-item.active[data-domain="support"] { border-right-color: #e11d48; color: #e11d48; }
+
+        .fade-in { animation: fadeIn 0.4s ease-in forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        history: '#0284c7',
-                        geography: '#16a34a'
-                    }
-                }
-            }
-        }
-    </script>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col relative">
 
-<!-- Chosen Palette: Warm Neutrals (Stone-50 background) with distinct semantic accents: Blue (History) for time/depth and Green (Geography) for earth/nature, ensuring visual harmony and cognitive separation. -->
-<!-- Application Structure Plan: A Dashboard-style layout with a primary top-level domain switcher (History vs Geography) and a secondary sidebar navigation for the 8 lessons within the active domain. This architecture facilitates quick, task-oriented exploration, allowing students to jump directly to specific topics rather than scrolling through a linear document. Each lesson view features a contextual introduction, structured bullet points, and dynamic canvas visualizations where data is available. -->
-<!-- Visualization & Content Choices: 1. Dynamic Text Blocks (Vanilla JS): To present the core historical/geographical facts clearly. 2. Doughnut Chart (Chart.js): Used for Geography Lesson 5 to contrast desertified vs non-desertified land, maximizing visual impact of the 68% statistic. 3. Bar Chart (Chart.js): Used for Geography Lesson 5 to compare water distribution across Arab regions, highlighting disparities. 4. Bar Chart: Used for History Lesson 6 to visualize the massive human cost of WW2. All charts use responsive containers. No SVG or Mermaid used. -->
-<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- OVERSIZED WATERMARK -->
+    <div class="watermark-mojo">MOJO</div>
 
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-2">
-                <span class="text-3xl">🎓</span>
-                <h1 class="text-2xl font-bold text-stone-800">منصة التفوق <span class="text-stone-500 font-medium text-lg">| أولى باك</span></h1>
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-slate-900 text-white px-3 py-1 rounded-lg font-black text-2xl tracking-tighter">MOJO</div>
+                <h1 class="text-xl md:text-2xl font-black text-slate-800">منصة التفوق <span class="text-slate-400 font-medium">| 1 BAC</span></h1>
             </div>
-            <div class="flex bg-stone-100 p-1 rounded-xl">
-                <button id="tab-history" class="px-6 py-2 rounded-lg font-bold transition-all duration-200 bg-history text-white shadow-md" onclick="switchDomain('history')">📜 التاريخ</button>
-                <button id="tab-geography" class="px-6 py-2 rounded-lg font-bold text-stone-500 hover:text-stone-800 transition-all duration-200" onclick="switchDomain('geography')">🌍 الجغرافيا</button>
-            </div>
+            <nav class="flex bg-slate-200/50 p-1.5 rounded-2xl gap-1">
+                <button id="tab-history" class="tab-btn px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-white" onclick="switchDomain('history')">📜 التاريخ</button>
+                <button id="tab-geography" class="tab-btn px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-white" onclick="switchDomain('geography')">🌍 الجغرافيا</button>
+                <button id="tab-support" class="tab-btn px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-white" onclick="switchDomain('support')">💖 الدعم</button>
+            </nav>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-8 w-full flex flex-col lg:flex-row gap-6 z-10">
         
-        <section class="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
-            <h2 id="intro-title" class="text-xl font-bold mb-2"></h2>
-            <p id="intro-text" class="text-stone-600 leading-relaxed"></p>
-        </section>
-
-        <div class="flex flex-col md:flex-row gap-8">
-            
-            <aside class="w-full md:w-1/3 lg:w-1/4 shrink-0">
-                <div class="sticky top-28 glass-panel p-4 rounded-2xl shadow-sm">
-                    <h3 class="font-bold text-lg mb-4 px-2 border-b-2 border-stone-100 pb-2">فهرس الدروس</h3>
-                    <div id="lesson-list" class="flex flex-col gap-2 h-auto max-h-[60vh] overflow-y-auto pr-2">
-                    </div>
+        <!-- Sidebar Navigation -->
+        <aside class="w-full lg:w-1/3 xl:w-1/4 shrink-0">
+            <div class="glass-panel p-5 rounded-3xl sticky top-24">
+                <h2 id="sidebar-title" class="font-black text-lg mb-4 pb-3 border-b-2 border-slate-100 flex items-center gap-2">
+                    <span>قائمة الدروس</span>
+                </h2>
+                <div id="lesson-list" class="flex flex-col gap-2 max-h-[65vh] overflow-y-auto pr-2 pb-4">
+                    <!-- Dynamic Lesson Buttons -->
                 </div>
-            </aside>
+            </div>
+        </aside>
 
-            <article class="w-full md:w-2/3 lg:w-3/4 bg-white rounded-2xl shadow-sm border border-stone-100 p-6 sm:p-8 min-h-[50vh]">
-                <div id="lesson-content" class="animate-fade-in">
-                    <div class="flex flex-col items-center justify-center h-full text-stone-400 py-20">
-                        <span class="text-6xl mb-4">👈</span>
-                        <p class="text-xl font-medium">الرجاء اختيار درس من القائمة الجانبية للبدء</p>
-                    </div>
-                </div>
-            </article>
+        <!-- Lesson Display Area -->
+        <article class="w-full lg:w-2/3 xl:w-3/4">
+            <div id="welcome-message" class="glass-panel rounded-3xl p-10 text-center flex flex-col items-center justify-center min-h-[60vh]">
+                <div class="text-6xl mb-6">🎯</div>
+                <h2 class="text-3xl font-black text-slate-800 mb-4">مرحباً بك يا بطل!</h2>
+                <p class="text-lg text-slate-600 max-w-lg">اختر درساً من القائمة الجانبية لبدء المراجعة الشاملة والمفصلة للامتحان الجهوي.</p>
+            </div>
 
-        </div>
+            <div id="lesson-content-container" class="hidden glass-panel rounded-3xl p-6 md:p-10 min-h-[60vh]">
+                <!-- Dynamic Content injected here -->
+            </div>
+        </article>
+
     </main>
 
     <script>
+        // --- DATA ARCHITECTURE (Detailed as requested) ---
         const appData = {
             history: {
-                introTitle: "مادة التاريخ: التحولات والصراعات",
-                introText: "في هذا القسم، سنستكشف التحولات الكبرى التي شهدها العالم الرأسمالي خلال القرن التاسع عشر، وكيف أدت التنافسات الإمبريالية إلى اندلاع الحربين العالميتين. كما سنتعرف على مسار استقلال المغرب ونضاله المستميت.",
+                title: "دروس التاريخ",
+                icon: "📜",
                 lessons: [
                     {
-                        id: 'h1',
-                        title: "1. التحولات الاقتصادية والمالية والاجتماعية والفكرية (ق 19)",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">التحولات الكبرى في العالم الرأسمالي</h3>
-                                  <p class="mb-4 text-stone-700">شهد القرن التاسع عشر ثورة حقيقية غيّرت وجه العالم، حيث انتقل الإنتاج من الأيادي إلى الآلات، وتضخمت رؤوس الأموال.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-history">
-                                    <li><b>التحولات:</b> مكننة الإنتاج والاعتماد على الآلة.</li>
-                                    <li><b>مالياً:</b> ظهور الرأسمالية المالية (الأبناك القوية والبورصة).</li>
-                                    <li><b>ديمغرافياً:</b> الانفجار الديمغرافي السريع ونمو المدن.</li>
-                                    <li><b>فكرياً:</b> ظهور الفكر الاشتراكي (ماركس) كرد فعل على معاناة الطبقة العاملة.</li>
-                                  </ul>`,
-                        chart: null
+                        id: "h1",
+                        title: "1. التحولات الاقتصادية، المالية، الاجتماعية والفكرية (ق19)",
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">التحولات الكبرى في العالم الرأسمالي</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl border border-sky-100 shadow-sm border-r-4 border-r-sky-500">
+                                    <h3 class="text-xl font-bold mb-3 text-sky-900">أولاً: المظاهر الاقتصادية والمالية</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium">
+                                        <li><b>فلاحياً:</b> مكننة الإنتاج (استعمال الآلات كآلة الحصاد)، الاعتماد على نظام التناوب الزراعي، وانتقاء سلالات جديدة للماشية، مما أدى لارتفاع المردودية وتوجيه الفلاحة للتسويق.</li>
+                                        <li><b>صناعياً:</b> ظهور نظام المعمل والعمل المتسلسل، استخدام مصادر طاقة جديدة (الفحم، البترول، الكهرباء)، وتطور صناعات الصلب والنسيج والكيمياء.</li>
+                                        <li><b>تجارياً:</b> تزايد المبادلات العالمية وتطبيق نظام التبادل الحر وتوسع الأسواق.</li>
+                                        <li><b>مالياً:</b> تطور الرأسمالية من "تجارية" إلى "صناعية" ثم إلى <b>"رأسمالية مالية"</b> حيث تحكمت الأبناك في الصناعة، وظهرت الشركات مجهولة الاسم (الهولدينغ) والبورصة.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-white p-5 rounded-2xl border border-sky-100 shadow-sm border-r-4 border-r-indigo-500">
+                                    <h3 class="text-xl font-bold mb-3 text-indigo-900">ثانياً: التحولات الاجتماعية والفكرية</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium">
+                                        <li><b>ديمغرافياً:</b> انفجار سكاني بسبب تحسن الطب والتغذية، ونمو حضري سريع (ظهور المدن المليونية كلندن) بسبب الهجرة القروية.</li>
+                                        <li><b>الطبقات الاجتماعية:</b> انقسم المجتمع لطبقتين: <b>البورجوازية</b> (التي تمتلك وسائل الإنتاج ورؤوس الأموال) و<b>البروليتاريا</b> (الطبقة العاملة التي عانت من طول ساعات العمل وانخفاض الأجور).</li>
+                                        <li><b>التيارات الفكرية (الاشتراكية):</b> ظهرت لانتقاد الرأسمالية، وانقسمت إلى: 
+                                            <br>- <i>الطوباوية (سان سيمون):</i> تدعو للتعاون والمساواة.
+                                            <br>- <i>الفوضوية (برودون):</i> تدعو لإلغاء الدولة.
+                                            <br>- <i>العلمية (كارل ماركس):</i> تدعو لثورة العمال (البروليتاريا) لإسقاط البورجوازية.
+                                        </li>
+                                        <li><b>العمل النقابي:</b> تأسيس نقابات حققت مكاسب للعمال كتقليص ساعات العمل، حق الإضراب، وتخليد فاتح ماي كعيد للشغل.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'h2',
+                        id: "h2",
                         title: "2. التنافس الإمبريالي واندلاع الحرب العالمية الأولى",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">السباق نحو الهاوية</h3>
-                                  <p class="mb-4 text-stone-700">أدت حاجة الدول الرأسمالية للمواد الأولية والأسواق إلى تنافس شرس انتهى بكارثة عالمية.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-history">
-                                    <li><b>التنافس:</b> صراع محموم حول المستعمرات وتشكيل تحالفات عسكرية (الوفاق ضد التحالف).</li>
-                                    <li><b>السباق:</b> تزايد الإنفاق العسكري والسباق نحو التسلح بين القوى الكبرى.</li>
-                                    <li><b>الشرارة:</b> اغتيال ولي عهد النمسا بسراييفو سنة 1914 كان النقطة التي أفاضت الكأس وأشعلت الحرب العالمية الأولى.</li>
-                                  </ul>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">سباق الإمبراطوريات وطريق الحرب</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3 text-slate-800 border-b pb-2">1. مظاهر وأساليب التنافس</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium">
+                                        <li><b>التنافس الاقتصادي والسياسي:</b> صراع بين الدول الصناعية (كألمانيا، فرنسا، إنجلترا، إيطاليا) للحصول على المواد الأولية، أسواق لتصريف الإنتاج، ومناطق لتصدير رؤوس الأموال.</li>
+                                        <li><b>التحالفات العسكرية:</b> انقسام أوروبا لمعسكرين: <b>التحالف الثلاثي</b> (ألمانيا، النمسا، إيطاليا 1882) و<b>الوفاق الثلاثي</b> (فرنسا، إنجلترا، روسيا 1907).</li>
+                                        <li><b>التسويات الدبلوماسية:</b> لتفادي الحرب مبكراً، عقدت مؤتمرات لتقسيم المستعمرات (مؤتمر برلين 1878 للبلقان، برلين 1884 لإفريقيا، ومؤتمر الجزيرة الخضراء 1906 حول المغرب).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-red-50 p-5 rounded-2xl border border-red-100 border-r-4 border-r-red-500">
+                                    <h3 class="text-xl font-bold mb-3 text-red-800">2. الأزمات والسبب المباشر للحرب</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium mb-4">
+                                        <li><b>الأزمات المغربية:</b> 1905 (زيارة غيوم الثاني لطنجة) و1911 (أزمة أكادير وتنازل فرنسا لألمانيا عن الكونغو مقابل المغرب).</li>
+                                        <li><b>الأزمات البلقانية:</b> صراعات بين النمسا وصربيا وروسيا حول السيطرة على البلقان (1908، 1912، 1913).</li>
+                                        <li><b>الشرارة (السبب المباشر):</b> اغتيال ولي عهد النمسا (فرانسوا فرديناند) في مدينة <b>سراييفو</b> يوم <b>28 يونيو 1914</b> على يد طالب صربي. أدى هذا لتفعيل نظام التحالفات وإعلان الحرب.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'h3',
+                        id: "h3",
                         title: "3. اليقظة الفكرية بالمشرق العربي",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">عصر النهضة والأفكار الجديدة</h3>
-                                  <p class="mb-4 text-stone-700">شهد المشرق العربي حراكاً فكرياً واسعاً لمواجهة التحديات الداخلية والخارجية، وانقسم المفكرون إلى تيارين رئيسيين.</p>
-                                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                                      <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
-                                          <h4 class="font-bold text-lg mb-2 text-stone-800">🕌 التيار السلفي</h4>
-                                          <p class="text-sm text-stone-600">ركز على الإصلاح الديني والعودة للأصول. من أبرز رواده: جمال الدين الأفغاني ومحمد عبده.</p>
-                                      </div>
-                                      <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
-                                          <h4 class="font-bold text-lg mb-2 text-stone-800">🏛️ التيار العلماني</h4>
-                                          <p class="text-sm text-stone-600">دعا إلى فصل الدين عن الدولة وتحديث المجتمع. من أبرز رواده: أديب إسحاق.</p>
-                                      </div>
-                                  </div>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">عصر النهضة واليقظة العربية</h2>
+                            <p class="mb-4 text-slate-600 font-medium">برزت اليقظة بالمشرق العربي (مصر، الشام) في القرن 19م، بتأثير عوامل سياسية (الحملة الفرنسية، ضعف العثمانيين)، ثقافية (ظهور المطبعة، الترجمة، المدارس)، واجتماعية (نمو الطبقة الوسطى).</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 p-3 opacity-20 text-6xl">🕌</div>
+                                    <h3 class="text-xl font-black text-emerald-800 mb-3 relative z-10">التيار السلفي (الإصلاحي)</h3>
+                                    <div class="relative z-10 text-slate-700 font-medium space-y-3">
+                                        <p><b>الرواد:</b> جمال الدين الأفغاني، محمد عبده، عبد الرحمن الكواكبي.</p>
+                                        <p><b>دينياً:</b> العودة للسلف الصالح ومحاربة البدع.</p>
+                                        <p><b>سياسياً:</b> الدعوة لنظام الشورى، رفض الاستبداد العثماني، ومواجهة الاستعمار الغربي.</p>
+                                        <p><b>اجتماعياً:</b> الاهتمام بالتربية والتعليم وتحقيق العدل.</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-sm relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 p-3 opacity-20 text-6xl">🏛️</div>
+                                    <h3 class="text-xl font-black text-indigo-800 mb-3 relative z-10">التيار العلماني (الليبرالي)</h3>
+                                    <div class="relative z-10 text-slate-700 font-medium space-y-3">
+                                        <p><b>الرواد:</b> أديب إسحاق، فرح أنطوان، قاسم أمين.</p>
+                                        <p><b>دينياً:</b> فصل الدين عن الدولة (حرية المعتقد).</p>
+                                        <p><b>سياسياً:</b> المطالبة بالديمقراطية، البرلمان، الدستور، والمساواة على الطريقة الغربية.</p>
+                                        <p><b>اجتماعياً:</b> تحرير المرأة وتحديث بنية المجتمع ونبذ الفوارق.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'h4',
+                        id: "h4",
                         title: "4. الضغوط الاستعمارية على المغرب ومحاولات الإصلاح",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">المغرب في مواجهة الأطماع</h3>
-                                  <p class="mb-4 text-stone-700">تعرض المغرب لضغوط متتالية أضعفت سيادته، ورغم محاولات المخزن للإصلاح، إلا أنها باءت بالفشل.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-history">
-                                    <li><b>الضغوط العسكرية:</b> انهزام المغرب في معركة إسلي (1844) أمام فرنسا، وفي حرب تطوان (1860) أمام إسبانيا.</li>
-                                    <li><b>الضغوط الدبلوماسية:</b> مؤتمر مدريد (1880) الذي كرس نظام الحمايات القنصلية.</li>
-                                    <li><b>الإصلاحات والفشل:</b> محاولات إصلاح عسكرية ومالية (ضريبة الترتيب)، فشلت بسبب تراكم الديون ومعارضة الأعيان.</li>
-                                  </ul>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">المغرب في مواجهة الانهيار</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3 text-red-700">1. الضغوط الممهدة للحماية</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium">
+                                        <li><b>الضغوط العسكرية:</b> 
+                                            <br>- <i>معركة إسلي (1844):</i> هزيمة المغرب أمام فرنسا بسبب دعمه للأمير عبد القادر الجزائري. فرضت إثرها "معاهدة لالة مغنية" (1845) التي تركت الحدود مبهمة للتوغل لاحقاً.
+                                            <br>- <i>حرب تطوان (1859-1860):</i> هزيمة أمام إسبانيا انتهت بغرامة مالية قاسية (20 مليون ريال) أفرغت الخزينة.
+                                        </li>
+                                        <li><b>الضغوط الدبلوماسية والاقتصادية:</b> فرضت إنجلترا معاهدة 1856 للامتيازات التجارية. وفرضت فرنسا "تسوية بيكلار" 1863، ثم مؤتمر مدريد 1880 الذي كرس "الحمايات القنصلية" (منح حماية للمغاربة تخرجهم عن سلطة السلطان).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-amber-50 p-5 rounded-2xl border border-amber-200">
+                                    <h3 class="text-xl font-bold mb-3 text-amber-900">2. محاولات الإصلاح المخزنية ولماذا فشلت؟</h3>
+                                    <p class="text-slate-700 font-medium mb-2">قام السلاطين (خاصة الحسن الأول) بعدة إصلاحات: <b>عسكرية</b> (تأسيس جيش نظامي واستيراد أسلحة)، <b>إدارية</b>، و<b>مالية</b> (إقرار ضريبة الترتيب على الجميع).</p>
+                                    <div class="mt-4 p-4 bg-white rounded-xl">
+                                        <h4 class="font-bold text-red-600 mb-2">أسباب الفشل:</h4>
+                                        <ul class="list-disc pl-5 text-sm text-slate-700 font-medium">
+                                            <li><b>عوامل داخلية:</b> معارضة شديدة من العلماء والأعيان لرفضهم التجنيد ورفضهم لضريبة الترتيب، إلى جانب كثرة التمردات والمحميين.</li>
+                                            <li><b>عوامل خارجية:</b> عرقلة الأوروبيين للإصلاحات، بيع أسلحة فاسدة للمغرب بأسعار باهظة، وتكبيل الدولة بديون ثقيلة.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'h5',
+                        id: "h5",
                         title: "5. أوروبا من نهاية ح.ع.1 إلى أزمة 1929",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">فترة ما بين الحربين</h3>
-                                  <p class="mb-4 text-stone-700">خرجت أوروبا منهكة من الحرب الأولى، لتواجه أزمات اقتصادية وسياسية مهدت لصراعات جديدة.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-history">
-                                    <li><b>الأحداث البارزة:</b> توقيع معاهدة فرساي القاسية ضد ألمانيا، واندلاع الثورة البلشفية في روسيا.</li>
-                                    <li><b>التطرف السياسي:</b> ظهور الأنظمة الديكتاتورية كالفاشية (إيطاليا) والنازية (ألمانيا).</li>
-                                    <li><b>أزمة 1929:</b> انهيار بورصة وول ستريت في أمريكا (الخميس الأسود)، وانتقال الأزمة الاقتصادية الخانقة إلى باقي العالم الرأسمالي.</li>
-                                  </ul>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">أوروبا بين الحربين: السلم الهش</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                                    <h3 class="text-xl font-bold mb-3 border-b pb-2">1. نتائج الحرب العالمية الأولى</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium">
+                                        <li><b>معاهدات الصلح (1919-1920):</b> فرض شروط قاسية على المنهزمين، أهمها <b>معاهدة فرساي</b> ضد ألمانيا (غرامات مالية، اقتطاع أراضي، وتقليص الجيش). ومعاهدات أخرى (سان جرمان، سيفر).</li>
+                                        <li><b>تغير الخريطة:</b> انهيار الإمبراطوريات القديمة (العثمانية، النمساوية) وظهور دول جديدة. تأسيس "عصبة الأمم" 1919 لحفظ السلم.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-slate-100 p-5 rounded-2xl">
+                                        <h3 class="text-lg font-bold mb-2 text-slate-800">2. الأوضاع الداخلية بأوروبا</h3>
+                                        <p class="text-sm text-slate-700 font-medium">
+                                            - <b>روسيا:</b> اندلاع الثورة البلشفية 1917 بقيادة لينين وتأسيس النظام الاشتراكي.<br>
+                                            - <b>إيطاليا وألمانيا:</b> استغلال الأزمات الاقتصادية والاجتماعية أدى لوصول <b>موسوليني</b> (الحزب الفاشي 1919) و<b>هتلر</b> (الحزب النازي) إلى السلطة وتأسيس أنظمة ديكتاتورية كليانية.
+                                        </p>
+                                    </div>
+                                    <div class="bg-rose-50 p-5 rounded-2xl border border-rose-200">
+                                        <h3 class="text-lg font-bold mb-2 text-rose-800">3. أزمة 1929 الاقتصادية</h3>
+                                        <p class="text-sm text-slate-700 font-medium">
+                                            انطلقت يوم "الخميس الأسود" 24 أكتوبر 1929 بانهيار بورصة <b>وول ستريت</b> בניويورك بسبب فائض الإنتاج والمضاربات. سحبت أمريكا أموالها من أوروبا، فانتشرت الأزمة للعالم الرأسمالي، مسببة إفلاسات، بطالة (ملايين العمال)، واضطرابات سياسية.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'h6',
+                        id: "h6",
                         title: "6. الحرب العالمية الثانية (الأسباب والنتائج)",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">الصراع المدمر المجدد</h3>
-                                  <p class="mb-4 text-stone-700">لم يدم السلام طويلاً، حيث أدت سياسات التوسع والتحالفات الجديدة إلى اندلاع الحرب العالمية الثانية، والتي خلفت خسائر بشرية غير مسبوقة.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-history mb-6">
-                                    <li><b>الأسباب:</b> فشل عصبة الأمم، التوسعات الديكتاتورية (خاصة غزو هتلر لبولونيا سنة 1939).</li>
-                                    <li><b>النتائج السياسية:</b> خريطة سياسية جديدة وبروز المعسكرين، وتأسيس هيئة الأمم المتحدة.</li>
-                                  </ul>`,
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">الدمار الشامل (1939 - 1945)</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3 text-red-700">1. الأسباب</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium">
+                                        <li><b>أسباب غير مباشرة:</b> مخلفات معاهدة فرساي القاسية، تداعيات أزمة 1929، التوسعات الديكتاتورية (اليابان في منشوريا، إيطاليا في الحبشة، وتطبيق هتلر لسياسة "المجال الحيوي" بضم النمسا -الأنشلوس- وتشيكوسلوفاكيا).</li>
+                                        <li><b>السبب المباشر:</b> غزو هتلر لـ <b>بولونيا</b> في فاتح شتنبر 1939، مما دفع فرنسا وإنجلترا لإعلان الحرب على ألمانيا.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3 text-sky-800">2. النتائج</h3>
+                                    <ul class="list-disc pl-5 space-y-2 text-slate-700 font-medium mb-6">
+                                        <li><b>بشرية واجتماعية:</b> حصيلة مهولة بلغت حوالي 50 مليون قتيل، دمار المدن، انتشار المجاعة والفقر.</li>
+                                        <li><b>اقتصادية:</b> تدمير البنيات التحتية والإنتاجية لأوروبا، وبروز الولايات المتحدة كأكبر مستفيد ومقرض.</li>
+                                        <li><b>سياسية:</b> تغيير خريطة أوروبا، انقسام ألمانيا، تأسيس <b>هيئة الأمم المتحدة (1945)</b> لحفظ السلم، وانقسام العالم لمعسكرين (غربي رأسمالي وشرقي شيوعي) وبداية "الحرب الباردة".</li>
+                                    </ul>
+                                    <div class="chart-container">
+                                        <canvas id="ww2Chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        `,
                         chart: {
                             type: 'bar',
                             data: {
-                                labels: ['قتلى الحرب العالمية الثانية (ملايين)'],
+                                labels: ['الحرب العالمية الثانية'],
                                 datasets: [{
-                                    label: 'الخسائر البشرية المهولة',
+                                    label: 'الخسائر البشرية (بالملايين)',
                                     data: [50],
-                                    backgroundColor: '#ef4444',
-                                    borderRadius: 4
+                                    backgroundColor: 'rgba(225, 29, 72, 0.8)',
+                                    borderRadius: 8
                                 }]
                             },
                             options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: { legend: { display: false }, title: {display: true, text: 'حجم الخسائر البشرية (50 مليون قتيل)', font: {family: 'Tajawal', size: 16}} },
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { display: false }, title: {display: true, text: 'حجم الخسائر البشرية المرعب (50 مليون قتيل)', font: {family:'Tajawal', size: 16}} },
                                 scales: { y: { beginAtZero: true, max: 60 } }
                             }
                         }
                     },
                     {
-                        id: 'h7',
+                        id: "h7",
                         title: "7. نظام الحماية بالمغرب والاستغلال الاستعماري",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">فقدان السيادة والاستغلال</h3>
-                                  <p class="mb-4 text-stone-700">بموجب معاهدة فاس، دخل المغرب مرحلة الاستعمار المباشر الذي استهدف استنزاف مقدراته.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-history">
-                                    <li><b>النظام:</b> توقيع معاهدة الحماية في 30 مارس 1912. تم تقسيم البلاد إلى منطقة فرنسية، إسبانية، ومنطقة طنجة الدولية.</li>
-                                    <li><b>الاستغلال الاقتصادي:</b> السيطرة على أجود الأراضي الفلاحية واستنزاف الثروات المعدنية.</li>
-                                    <li><b>الآثار الاجتماعية:</b> تضرر الحرفيين والفلاحين المغاربة، وتزايد الفقر والهجرة نحو المدن (ظهور مدن الصفيح).</li>
-                                  </ul>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">المغرب تحت مقصلة الاستغلال</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3">1. إرساء نظام الحماية</h3>
+                                    <p class="text-slate-700 font-medium mb-2">أمام تدهور الأوضاع وتزايد التمردات (بوحمارة) والديون، أُجبر السلطان المولى عبد الحفيظ على توقيع <b>معاهدة الحماية في 30 مارس 1912</b>. تم تقسيم المغرب إلى:</p>
+                                    <ul class="list-disc pl-5 text-sm text-slate-700 font-medium">
+                                        <li>منطقة سلطانية (وسط): نفوذ فرنسي، سلطة حقيقية للمقيم العام.</li>
+                                        <li>منطقة خليفية (شمال وجنوب): نفوذ إسباني (مندوب سامي).</li>
+                                        <li>منطقة طنجة: نفوذ دولي (منذ 1923).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-orange-50 p-5 rounded-2xl border border-orange-200">
+                                    <h3 class="text-xl font-bold mb-3 text-orange-900">2. آليات ومظاهر الاستغلال</h3>
+                                    <p class="text-slate-700 font-medium mb-2">بنى المستعمر طرقاً وسدوداً وأبناكاً لتسهيل نهب الثروات:</p>
+                                    <ul class="list-disc pl-5 text-sm text-slate-700 font-medium mb-4">
+                                        <li><b>فلاحياً:</b> الاستيطان الزراعي والاستيلاء على أخصب الأراضي لزراعة منتجات التسويق.</li>
+                                        <li><b>صناعياً:</b> استنزاف المعادن (خاصة الفوسفاط) واستغلال اليد العاملة الرخيصة.</li>
+                                        <li><b>تجارياً:</b> ربط المغرب باقتصاديات المستعمر، مما أدى لعجز دائم في الميزان التجاري.</li>
+                                    </ul>
+                                    <div class="p-3 bg-white rounded-lg border-l-4 border-red-500">
+                                        <p class="text-sm font-bold text-red-700">الآثار: إفقار شديد للفلاحين (تحولوا لعمال زراعيين)، إفلاس الحرفيين بسبب المنافسة، الهجرة القروية، وظهور مدن الصفيح والبروليتاريا.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'h8',
-                        title: "8. نضال المغرب من أجل الاستقلال واستكمال الوحدة",
-                        content: `<h3 class="text-2xl font-bold text-history mb-4">مسيرة الكفاح والتحرر</h3>
-                                  <p class="mb-4 text-stone-700">لم يستسلم المغاربة للاستعمار، بل خاضوا كفاحاً طويلاً تنوعت أساليبه حتى تحقيق الاستقلال.</p>
-                                  <div class="relative border-r-2 border-history pl-4 ml-2 space-y-4 mt-4">
-                                      <div class="relative">
-                                          <span class="absolute -left-[23px] top-1 h-3 w-3 rounded-full bg-history"></span>
-                                          <strong class="text-stone-800">إلى 1934:</strong> مرحلة المقاومة المسلحة في الجبال والبوادي.
-                                      </div>
-                                      <div class="relative">
-                                          <span class="absolute -left-[23px] top-1 h-3 w-3 rounded-full bg-history"></span>
-                                          <strong class="text-stone-800">1934:</strong> انطلاق الحركة الوطنية والمطالبة بالإصلاحات السلمية.
-                                      </div>
-                                      <div class="relative">
-                                          <span class="absolute -left-[23px] top-1 h-3 w-3 rounded-full bg-history"></span>
-                                          <strong class="text-stone-800">1944:</strong> تقديم وثيقة المطالبة بالاستقلال (11 يناير).
-                                      </div>
-                                      <div class="relative">
-                                          <span class="absolute -left-[23px] top-1 h-3 w-3 rounded-full bg-history"></span>
-                                          <strong class="text-stone-800">1953:</strong> نفي السلطان واندلاع "ثورة الملك والشعب".
-                                      </div>
-                                      <div class="relative">
-                                          <span class="absolute -left-[23px] top-1 h-3 w-3 rounded-full bg-history"></span>
-                                          <strong class="text-stone-800">1956:</strong> تحقيق الاستقلال والبدء في استكمال الوحدة الترابية.
-                                      </div>
-                                  </div>`,
-                        chart: null
+                        id: "h8",
+                        title: "8. نضال المغرب من أجل الاستقلال واستكمال وحدته",
+                        content: `
+                            <h2 class="text-3xl font-black text-sky-700 mb-6">مسار التحرير والبناء</h2>
+                            
+                            <div class="relative border-r-4 border-sky-600 pr-6 space-y-8 mt-6">
+                                <div class="relative">
+                                    <span class="absolute -right-[35px] top-1 h-5 w-5 rounded-full bg-white border-4 border-sky-600"></span>
+                                    <h3 class="text-xl font-bold text-slate-800">1. المقاومة المسلحة (1912 - 1934)</h3>
+                                    <p class="text-slate-700 font-medium text-sm mt-1">كبدت المستعمر خسائر فادحة قبل أن تتوقف بسبب التفوق العسكري للعدو والخيانة. أبرزها:</p>
+                                    <ul class="list-disc pl-5 text-sm text-slate-600 mt-2">
+                                        <li>أحمد الهيبة (الجنوب - معركة سيدي بوعثمان 1912).</li>
+                                        <li>موحا أو حمو الزياني (الأطلس المتوسط - انتصار معركة لهري 1914).</li>
+                                        <li>محمد بن عبد الكريم الخطابي (الريف - انتصار أنوال 1921).</li>
+                                        <li>عسو أوبسلام (الأطلس الصغير - معركة بوكافر 1933).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="relative">
+                                    <span class="absolute -right-[35px] top-1 h-5 w-5 rounded-full bg-white border-4 border-sky-600"></span>
+                                    <h3 class="text-xl font-bold text-slate-800">2. الحركة الوطنية السلمية (1930 - 1944)</h3>
+                                    <p class="text-slate-700 font-medium text-sm mt-1">نشأت بعد إصدار "الظهير البربري" 1930. طالبت أولاً بالإصلاحات (برنامج 1934)، ثم استغلت ظروف ح.ع.2 (اللقاء بأنفا 1943) لتقديم <b>وثيقة المطالبة بالاستقلال (11 يناير 1944)</b> بدعم من السلطان محمد الخامس.</p>
+                                </div>
+
+                                <div class="relative">
+                                    <span class="absolute -right-[35px] top-1 h-5 w-5 rounded-full bg-white border-4 border-sky-600"></span>
+                                    <h3 class="text-xl font-bold text-slate-800">3. ثورة الملك والشعب والاستقلال</h3>
+                                    <p class="text-slate-700 font-medium text-sm mt-1">أدى رفض السلطان لتوقيع مراسيم الحماية إلى نفيه (20 غشت 1953)، فانطلقت العمليات الفدائية وجيش التحرير. أُجبرت فرنسا على إرجاع السلطان وتوقيع الاستقلال في <b>2 مارس 1956</b>.</p>
+                                </div>
+
+                                <div class="relative">
+                                    <span class="absolute -right-[35px] top-1 h-5 w-5 rounded-full bg-white border-4 border-sky-600"></span>
+                                    <h3 class="text-xl font-bold text-slate-800">4. استكمال الوحدة الترابية</h3>
+                                    <p class="text-slate-700 font-medium text-sm mt-1">المنطقة الخليفية وطنجة (1956)، طرفاية (1958)، سيدي إفني (1969)، الساقية الحمراء بالمسيرة الخضراء (1975)، ووادي الذهب (1979).</p>
+                                </div>
+                            </div>
+                        `
                     }
                 ]
             },
             geography: {
-                introTitle: "مادة الجغرافيا: المجال والموارد والتحديات",
-                introText: "في هذا القسم، سنسلط الضوء على مفاهيم التنمية وإعداد التراب الوطني بالمغرب، ثم ننتقل لتحليل القوى الاقتصادية العالمية الكبرى (أمريكا، أوروبا، الصين) وتحديات العالم العربي بيئياً.",
+                title: "دروس الجغرافيا",
+                icon: "🌍",
                 lessons: [
                     {
-                        id: 'g1',
-                        title: "1. مفهوم التنمية (المقاربات والتقسيمات)",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">فهم التنمية وقياسها</h3>
-                                  <p class="mb-4 text-stone-700">التنمية ليست مجرد نمو اقتصادي، بل هي تحسن شامل في جودة حياة الإنسان. تقاس التنمية بمؤشر التنمية البشرية (IDH) الذي يعتمد على ثلاث ركائز.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-geography mb-6">
-                                    <li><b>المفهوم:</b> تطور اقتصادي واجتماعي مستدام.</li>
-                                    <li><b>التقسيم العالمي:</b> ينقسم العالم أساساً إلى دول الشمال (المتقدمة والغنية) ودول الجنوب (النامية والفقيرة).</li>
-                                  </ul>`,
+                        id: "g1",
+                        title: "1. التنمية: المفهوم، المقاربات، والتقسيمات الكبرى",
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">فهم إشكالية التنمية</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3 text-emerald-900">1. المفهوم والمقاربات</h3>
+                                    <p class="text-slate-700 font-medium mb-2">التنمية هي التغير الجذري الذي يطرأ على بلد ما اقتصادياً واجتماعياً وثقافياً. تعتمد دراستها على مقاربات متعددة:</p>
+                                    <ul class="list-disc pl-5 text-sm text-slate-700 font-medium space-y-1">
+                                        <li>مقاربة اقتصادية (الناتج الداخلي).</li>
+                                        <li>مقاربة اجتماعية (الفقر والأمية والمساواة).</li>
+                                        <li>مقاربة ديمغرافية وسياسية (الديمقراطية وحقوق الإنسان).</li>
+                                        <li>مقاربة بيئية (التنمية المستدامة وحفظ الموارد للأجيال القادمة).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-200">
+                                    <h3 class="text-xl font-bold mb-3 text-emerald-900">2. التقسيمات الكبرى للعالم</h3>
+                                    <p class="text-slate-700 font-medium mb-4">يتم تقسيم العالم بناءً على مؤشر التنمية البشرية (IDH) الذي يدمج 3 أبعاد: الصحة (أمد الحياة)، التعليم، ومستوى المعيشة (الدخل).</p>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 text-sm font-bold text-center">
+                                        <div class="p-3 bg-blue-100 text-blue-800 rounded-lg">دول الشمال (المتقدمة)<br><span class="text-xs font-normal">مؤشر مرتفع جداً (كأوروبا وأمريكا)</span></div>
+                                        <div class="p-3 bg-amber-100 text-amber-800 rounded-lg">دول الجنوب (النامية)<br><span class="text-xs font-normal">مؤشر متوسط أو ضعيف (كإفريقيا)</span></div>
+                                    </div>
+                                    
+                                    <div class="chart-container mt-6">
+                                        <canvas id="idhChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        `,
                         chart: {
                             type: 'doughnut',
                             data: {
-                                labels: ['الصحة (أمد الحياة)', 'التعليم (المعرفة)', 'الدخل الفردي (المستوى المعيشي)'],
-                                datasets: [{
-                                    data: [33.3, 33.3, 33.4],
-                                    backgroundColor: ['#3b82f6', '#f59e0b', '#10b981'],
-                                    borderWidth: 0
-                                }]
+                                labels: ['الصحة (أمد الحياة)', 'التعليم (نسبة التمدرس)', 'مستوى المعيشة (الدخل الفردي)'],
+                                datasets: [{ data: [33.3, 33.3, 33.4], backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'], borderWidth: 0 }]
                             },
                             options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    title: { display: true, text: 'مكونات مؤشر التنمية البشرية (IDH)', font: {family: 'Tajawal', size: 16}},
-                                    tooltip: { callbacks: { label: function(context) { return ' ' + context.label; } } }
-                                }
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { title: { display: true, text: 'مكونات مؤشر التنمية البشرية (IDH)', font: {family: 'Tajawal', size: 16} } }
                             }
                         }
                     },
                     {
-                        id: 'g2',
+                        id: "g2",
                         title: "2. المجال المغربي: الموارد الطبيعية والبشرية",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">واقع الموارد في المغرب</h3>
-                                  <p class="mb-4 text-stone-700">يواجه المغرب تحديات بيئية كبيرة، لكنه يمتلك ثروة ديمغرافية هامة تتطلب التأهيل.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-geography">
-                                    <li><b>الموارد الطبيعية:</b> يعاني المغرب من ندرة المياه وتدهور التربة والتصحر.</li>
-                                    <li><b>الموارد البشرية:</b> يتميز المجتمع المغربي بالفتوة (نسبة عالية من الشباب).</li>
-                                    <li><b>التدبير:</b> لمواجهة التحديات الاجتماعية والاقتصادية، تم إطلاق المبادرة الوطنية للتنمية البشرية سنة 2005.</li>
-                                  </ul>`,
-                        chart: null
-                    },
-                    {
-                        id: 'g3',
-                        title: "3. الاختيارات الكبرى لسياسة إعداد التراب الوطني",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">تنظيم المجال الجغرافي</h3>
-                                  <p class="mb-4 text-stone-700">تعتبر سياسة إعداد التراب الوطني خطة استراتيجية لتنظيم المجال وتخفيف الفوارق بين الجهات.</p>
-                                  <div class="bg-stone-50 p-4 rounded-xl mt-4 border border-stone-200">
-                                    <h4 class="font-bold text-geography mb-2">🎯 الأهداف الرئيسية</h4>
-                                    <ul class="list-disc list-inside space-y-1 text-sm text-stone-600">
-                                        <li>تحقيق العدالة المجالية (توزيع عادل للثروات والمشاريع).</li>
-                                        <li>النجاعة الاقتصادية وتطوير الإنتاج.</li>
-                                        <li>الحفاظ على البيئة والموارد الطبيعية.</li>
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">واقع الموارد بالمغرب والتدابير</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl border-l-4 border-l-blue-500 shadow-sm">
+                                    <h3 class="text-xl font-bold mb-3 text-slate-800">1. الموارد الطبيعية والتحديات</h3>
+                                    <ul class="list-disc pl-5 text-sm text-slate-700 font-medium space-y-2">
+                                        <li><b>الماء:</b> تراجع حصة الفرد، توالي سنوات الجفاف. <i>التدابير: بناء السدود، تحلية مياه البحر.</i></li>
+                                        <li><b>التربة:</b> التدهور والتصحر والانجراف. <i>التدابير: برامج التشجير وحماية الأراضي.</i></li>
+                                        <li><b>الغابة:</b> تراجع المساحة بسبب الحرائق والاستغلال. <i>التدابير: المندوبية السامية للمياه والغابات.</i></li>
+                                        <li><b>البحر:</b> استنزاف الثروة وتلوث السواحل. <i>التدابير: الراحة البيولوجية ونظام الكوطا.</i></li>
                                     </ul>
-                                  </div>
-                                  <p class="mt-4 text-stone-700"><b>المبادئ:</b> تعتمد السياسة على تدعيم الوحدة الوطنية، إشراك السكان، وتأهيل الموارد البشرية.</p>`,
-                        chart: null
+                                </div>
+
+                                <div class="bg-white p-5 rounded-2xl border-l-4 border-l-amber-500 shadow-sm">
+                                    <h3 class="text-xl font-bold mb-3 text-slate-800">2. الموارد البشرية ووضعية التنمية</h3>
+                                    <p class="text-slate-700 font-medium mb-2">يتسم الهرم السكاني للمغرب بـ <b>الفتوة</b> (حوالي 65% شباب قادرين على العمل). لكن هذه الثروة تواجه تحديات: الأمية (41% سنة 2014)، البطالة المرتفعة، وأزمة السكن والصحة.</p>
+                                    <div class="mt-3 p-3 bg-amber-50 rounded-lg text-amber-900 font-medium">
+                                        <b>التدبير الأهم:</b> إطلاق <b>المبادرة الوطنية للتنمية البشرية</b> (18 ماي 2005) لمحاربة الفقر والإقصاء الاجتماعي والهشاشة وخلق مشاريع مدرة للدخل.
+                                    </div>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'g4',
-                        title: "4. التهيئة الحضرية والريفية (أزمة المدينة والريف)",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">تحديات المدن والقرى</h3>
-                                  <p class="mb-4 text-stone-700">يعيش المجال الجغرافي المغربي أزمات متباينة تتطلب تدخلات قطاعية ومجالية دقيقة.</p>
-                                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                      <div class="border border-stone-200 p-4 rounded-xl shadow-sm">
-                                          <h4 class="font-bold text-lg mb-2">🏢 أزمة المدينة</h4>
-                                          <p class="text-sm text-stone-600 mb-2">عجز في السكن (أحياء صفيحية)، بطالة، تلوث، وضغط على الخدمات.</p>
-                                          <p class="text-sm font-bold text-geography">التدخل: إنشاء الوكالات الحضرية وبرامج السكن.</p>
-                                      </div>
-                                      <div class="border border-stone-200 p-4 rounded-xl shadow-sm">
-                                          <h4 class="font-bold text-lg mb-2">🏕️ أزمة الريف</h4>
-                                          <p class="text-sm text-stone-600 mb-2">عزلة، فقر، ضعف البنيات التحتية، وتراجع الإنتاج الفلاحي.</p>
-                                          <p class="text-sm font-bold text-geography">التدخل: مخطط المغرب الأخضر لفك العزلة وتطوير الفلاحة.</p>
-                                      </div>
-                                  </div>`,
-                        chart: null
+                        id: "g3",
+                        title: "3. الاختيارات الكبرى لسياسة إعداد التراب الوطني",
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">تنظيم المجال الجغرافي وطنياً</h2>
+                            
+                            <div class="space-y-4">
+                                <p class="text-slate-700 font-medium"><b>المفهوم:</b> هي تدخل الدولة لتنظيم المجال والتخفيف من التفاوتات الاقتصادية والاجتماعية بين الجهات لتحقيق تنمية متوازنة.</p>
+                                
+                                <div class="bg-slate-100 p-5 rounded-2xl">
+                                    <h3 class="text-lg font-bold mb-3 text-slate-800">التحديات المفروضة:</h3>
+                                    <ul class="list-disc pl-5 text-sm text-slate-700 font-medium">
+                                        <li>ديمغرافية (انفجار سكاني وتمركز بالمدن).</li>
+                                        <li>اقتصادية (تراجع النمو وضعف الاستثمار).</li>
+                                        <li>بيئية (تدهور الموارد الطبيعية والمناخ).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
+                                    <h3 class="text-lg font-bold mb-3 text-emerald-800">الاختيارات والتوجهات الكبرى:</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-800 font-medium">
+                                        <div class="p-2 bg-white rounded border">تنمية العالم القروي (فك العزلة).</div>
+                                        <div class="p-2 bg-white rounded border">تأهيل الاقتصاد الوطني.</div>
+                                        <div class="p-2 bg-white rounded border">تدبير الموارد الطبيعية وحمايتها.</div>
+                                        <div class="p-2 bg-white rounded border">حل إشكالية العقار والتعمير.</div>
+                                    </div>
+                                    <p class="mt-4 text-sm font-bold text-slate-700">تعتمد على مبادئ: تدعيم الوحدة الوطنية، التنمية المندمجة، والمحافظة على البيئة.</p>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'g5',
+                        id: "g4",
+                        title: "4. التهيئة الحضرية والريفية (أزمات المدينة والريف)",
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">أزمات المجال المغربي والتدخلات</h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-white border-t-4 border-t-indigo-600 shadow-md p-5 rounded-xl">
+                                    <h3 class="text-xl font-bold mb-3 text-indigo-800 text-center">🏢 أزمة المدينة</h3>
+                                    <ul class="list-disc pl-5 text-sm text-slate-700 font-medium space-y-2 mb-4">
+                                        <li><b>المظاهر:</b> انتشار السكن العشوائي (أحياء الصفيح)، الاقتصاد غير المهيكل، البطالة، الفقر، ومشاكل النفايات والتلوث.</li>
+                                        <li><b>العوامل:</b> الهجرة القروية الكثيفة وسوء التسيير.</li>
+                                    </ul>
+                                    <div class="bg-indigo-50 p-3 rounded-lg text-sm text-indigo-900 font-bold">
+                                        أشكال التدخل: قانون التعمير (1992)، إنشاء الوكالات الحضرية، وبرنامج "مدن بدون صفيح".
+                                    </div>
+                                </div>
+
+                                <div class="bg-white border-t-4 border-t-amber-600 shadow-md p-5 rounded-xl">
+                                    <h3 class="text-xl font-bold mb-3 text-amber-800 text-center">🏕️ أزمة الريف</h3>
+                                    <ul class="list-disc pl-5 text-sm text-slate-700 font-medium space-y-2 mb-4">
+                                        <li><b>المظاهر:</b> ضعف المردودية الفلاحية، فقر، أمية عالية، هشاشة وضعف الربط بالماء والكهرباء والطرق (العزلة).</li>
+                                        <li><b>العوامل:</b> تهميش البوادي والجفاف.</li>
+                                    </ul>
+                                    <div class="bg-amber-50 p-3 rounded-lg text-sm text-amber-900 font-bold">
+                                        أشكال التدخل: استراتيجية 2020 للتنمية القروية، وبرامج الدعم مثل "مخطط المغرب الأخضر" (2008).
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    },
+                    {
+                        id: "g5",
                         title: "5. العالم العربي: مشكل الماء وظاهرة التصحر",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">التحديات البيئية الكبرى</h3>
-                                  <p class="mb-4 text-stone-700">يعتبر العالم العربي من أكثر مناطق العالم جفافاً، مما يعرضه لأزمتين خطيرتين: ندرة المياه وزحف الصحراء.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-geography mb-6">
-                                    <li><b>مشكل الماء:</b> خصاص مائي بنيوي وتفاوت صارخ في التوزيع (حوض النيل يستحوذ على نصيب الأسد بينما تعاني شبه الجزيرة العربية).</li>
-                                    <li><b>ظاهرة التصحر:</b> تدهور خصوبة الأراضي بسبب قساوة المناخ والاستغلال البشري المفرط.</li>
-                                  </ul>`,
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">البيئة القاسية في العالم العربي</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3 text-blue-700">1. مشكل الخصاص المائي</h3>
+                                    <p class="text-slate-700 font-medium mb-2">يتسم العالم العربي بندرة وضعف حصة الفرد، وتفاوت صارخ في التوزيع (حوض النيل يملك 38% مقابل 6% للجزيرة العربية). كما تواجه المنطقة تحدي التبعية للخارج (منابع الأنهار الكبرى خارج الوطن العربي).</p>
+                                    <p class="text-sm text-slate-600"><b>العوامل:</b> طبيعية (وقوع المنطقة في حزام جاف) وبشرية (النمو الديمغرافي والتبذير).<br><b>التدابير:</b> بناء السدود، تحلية مياه البحر (دول الخليج)، ومشروع النهر الصناعي العظيم (ليبيا).</p>
+                                </div>
+
+                                <div class="bg-orange-50 p-5 rounded-2xl border border-orange-200">
+                                    <h3 class="text-xl font-bold mb-3 text-orange-800">2. ظاهرة التصحر</h3>
+                                    <p class="text-slate-700 font-medium mb-3">تغطي الأراضي المتصحرة نسبة مهولة تبلغ <b>68.4%</b> من مساحة العالم العربي. تتخذ الظاهرة أشكالاً كزحف الرمال (الترمل)، وتملح التربة، والإقحال (تشقق الأرض).</p>
+                                    <p class="text-sm text-slate-600 mb-4"><b>العوامل:</b> الجفاف المتعاقب، والاستغلال المفرط للتربة والرعي الجائر وقطع الغابات.</p>
+                                    <div class="chart-container h-[250px]">
+                                        <canvas id="desertChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        `,
                         chart: {
                             type: 'pie',
                             data: {
-                                labels: ['أراضي متصحرة (68%)', 'أراضي أخرى (32%)'],
-                                datasets: [{
-                                    data: [68, 32],
-                                    backgroundColor: ['#d97706', '#10b981'],
-                                    borderWidth: 1,
-                                    borderColor: '#fff'
-                                }]
+                                labels: ['أراضي متصحرة (68.4%)', 'أراضي مهددة/أخرى'],
+                                datasets: [{ data: [68.4, 31.6], backgroundColor: ['#d97706', '#a7f3d0'], borderWidth: 0 }]
                             },
                             options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    title: { display: true, text: 'نسبة التصحر في العالم العربي', font: {family: 'Tajawal', size: 16}}
-                                }
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { title: { display: true, text: 'خطر التصحر في العالم العربي', font: {family: 'Tajawal', size: 16} } }
                             }
                         }
                     },
                     {
-                        id: 'g6',
+                        id: "g6",
                         title: "6. الولايات المتحدة الأمريكية (قوة اقتصادية عظمى)",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">العملاق الرأسمالي</h3>
-                                  <p class="mb-4 text-stone-700">تتربع الولايات المتحدة على عرش الاقتصاد العالمي بفضل تكامل قطاعاتها الاقتصادية وقوة تنظيمها الرأسمالي.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-geography">
-                                    <li><b>المظاهر:</b> تفوق عالمي ومراتب أولى في الفلاحة (نظام الأكروبيزنيس)، الصناعة التكنولوجية الدقيقة، والتجارة العالمية.</li>
-                                    <li><b>العوامل:</b> وفرة الموارد الطبيعية (سهول شاسعة، معادن)، نظام رأسمالي ليبرالي قوي، والاعتماد الكبير على البحث العلمي والشركات المتعددة الجنسيات.</li>
-                                  </ul>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">آليات الهيمنة الأمريكية</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                    <h3 class="text-xl font-bold mb-3 border-b pb-2">1. مظاهر القوة العظمى</h3>
+                                    <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700 font-medium">
+                                        <li><b>فلاحياً:</b> إنتاج ضخم وتنوع، ريادة عالمية عبر نظام "الأكروبيزنيس" (اندماج الفلاحة بالصناعة والتجارة).</li>
+                                        <li><b>صناعياً:</b> تفوق في الصناعات العالية التكنولوجيا (منطقة السيليكون فالي) وصناعة الطيران والفضاء.</li>
+                                        <li><b>تجارياً:</b> تسيطر على حوالي 18% من التجارة العالمية، وشركاتها وقوتها المالية (وول ستريت والدولار) تهيمن عالمياً.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-200">
+                                    <h3 class="text-xl font-bold mb-3 text-emerald-900">2. العوامل والمشاكل</h3>
+                                    <p class="text-sm text-slate-700 font-medium mb-3"><b>العوامل:</b> طبيعية (سهول شاسعة وموارد طاقية)، بشرية (313 مليون نسمة، سوق ضخم، وأدمغة مستقطبة)، وتنظيمية (النظام الرأسمالي، وقوة الشركات متعددة الجنسيات).</p>
+                                    <div class="p-3 bg-white rounded-lg border-r-4 border-r-red-500">
+                                        <p class="text-sm font-bold text-red-700">المشاكل والتحديات:</p>
+                                        <p class="text-sm text-slate-600">فائض الإنتاج والمنافسة الخارجية الحادة (الصين)، عجز الميزان التجاري، الكوارث الطبيعية (الأعاصير)، والتلوث البيئي والفقر.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'g7',
+                        id: "g7",
                         title: "7. الاتحاد الأوروبي (نحو اندماج شامل)",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">نموذج التكتل الإقليمي</h3>
-                                  <p class="mb-4 text-stone-700">استطاعت دول أوروبا تجاوز خلافاتها التاريخية لتأسيس أقوى تكتل اقتصادي وسياسي في العالم، رغم التحديات الديمغرافية.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-geography">
-                                    <li><b>مظاهر الاندماج:</b> سياسات مشتركة فلاحياً وصناعياً، توحيد العملة (الأورو)، وحرية التنقل التجاري والبشري (فضاء شنغن)، بالإضافة إلى مؤسسات سياسية موحدة كالبرلمان الأوروبي.</li>
-                                    <li><b>المعيقات:</b> التباين الاقتصادي بين دول أوروبا الغربية والشرقية، ومواجهة مشكلة "شيخوخة المجتمع" وتراجع نسبة الشباب.</li>
-                                  </ul>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">نموذج التكتل الإقليمي الناجح</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                                    <h3 class="text-xl font-bold mb-3 text-blue-900">1. مسار الاندماج ومظاهره</h3>
+                                    <p class="text-slate-700 font-medium text-sm mb-3">تأسس تدريجياً من "مجموعة الفحم والفولاذ" 1951، مروراً بمعاهدة روما 1957، وصولاً لـ <b>معاهدة ماستريخت 1992</b> التي أسست للاتحاد فعلياً. حقق اندماجاً قوياً في الميادين:</p>
+                                    <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700 font-medium">
+                                        <li><b>الاقتصادية:</b> السياسة الفلاحية المشتركة، ومشاريع صناعية كبرى كطائرة "إيرباص".</li>
+                                        <li><b>التجارية والمالية:</b> إلغاء الرسوم والحدود (اتفاقية شنغن 1985)، وتوحيد العملة (الأورو 2002).</li>
+                                        <li><b>السياسية:</b> مؤسسات ديمقراطية موحدة كالبرلمان الأوروبي.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-rose-50 p-5 rounded-2xl border border-rose-200">
+                                    <h3 class="text-lg font-bold mb-2 text-rose-800">2. معيقات الاندماج (نقاط الضعف)</h3>
+                                    <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700 font-medium">
+                                        <li>التباين الاقتصادي بين دول الغرب الغنية ودول الشرق الأقل نمواً.</li>
+                                        <li>شيخوخة المجتمع الأوروبي وتراجع نسبة الشباب.</li>
+                                        <li>عدم تعميم العملة الموحدة على جميع الدول.</li>
+                                        <li>انسحاب بريطانيا (البريكسيت).</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `
                     },
                     {
-                        id: 'g8',
+                        id: "g8",
                         title: "8. الصين (قوة اقتصادية صاعدة)",
-                        content: `<h3 class="text-2xl font-bold text-geography mb-4">المارد الآسيوي</h3>
-                                  <p class="mb-4 text-stone-700">تحولت الصين في عقود قليلة من دولة زراعية منغلقة إلى "مصنع العالم" وأكبر منافس اقتصادي بفضل سياسات الانفتاح المدروسة.</p>
-                                  <ul class="list-disc list-inside space-y-2 text-stone-700 marker:text-geography">
-                                    <li><b>مسار الصعود:</b> تم بناء الأساس في المرحلة الاشتراكية، ثم حدثت القفزة الكبرى مع مرحلة الانفتاح الاقتصادي منذ 1978.</li>
-                                    <li><b>المظاهر:</b> إنتاج صناعي ضخم وغزو الأسواق العالمية بالبضائع، وتحقيق فائض تجاري ضخم.</li>
-                                    <li><b>التحديات:</b> التفاوت التنموي الكبير بين الساحل الشرقي الغني والداخل الفقير، والتلوث البيئي الناتج عن التصنيع الكثيف.</li>
-                                  </ul>`,
-                        chart: null
+                        content: `
+                            <h2 class="text-3xl font-black text-emerald-700 mb-6">المارد الآسيوي والصعود الاقتصادي</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border-r-4 border-r-red-600">
+                                    <h3 class="text-xl font-bold mb-3 text-slate-800">1. مظاهر القوة ومراحل التطور</h3>
+                                    <p class="text-sm text-slate-700 font-medium mb-3">غزت الصين الأسواق العالمية بصناعاتها وحققت نمواً اقتصادياً وفائضاً تجارياً خيالياً. يفسر هذا النجاح بمرورها بمرحلتين حاسمتين:</p>
+                                    <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700 font-medium">
+                                        <li><b>مرحلة البناء الاشتراكي (1949-1976):</b> بقيادة "ماو تسي تونغ"، تم فيها تأميم وسائل الإنتاج والاعتماد على الصناعات الثقيلة والتنظيم الجماعي (الكميونات).</li>
+                                        <li><b>مرحلة الانفتاح الرأسمالي (منذ 1978):</b> بقيادة "دينغ شياو بينغ"، شجعت الاستثمار الأجنبي، خصخصت بعض القطاعات، وانضمت لمنظمة التجارة العالمية (صارت مصنع العالم).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border-r-4 border-r-slate-400">
+                                    <h3 class="text-xl font-bold mb-3 text-slate-800">2. العوامل والمشاكل</h3>
+                                    <p class="text-sm text-slate-700 font-medium mb-3"><b>الموارد:</b> ثروة بشرية تفوق 1.3 مليار نسمة (يد عاملة وسوق ضخم)، ثروة طبيعية هائلة.</p>
+                                    <p class="text-sm font-bold text-red-700">التحديات المعيقة:</p>
+                                    <ul class="list-disc pl-5 space-y-1 text-sm text-slate-600 font-medium">
+                                        <li>تفاوت مجالي واجتماعي صارخ: الواجهة الشرقية الساحلية متقدمة جداً مقارنة بالغرب الداخلي الفقير والمهمش.</li>
+                                        <li>مشاكل ديمغرافية (شيخوخة السكان بسبب سياسة الطفل الواحد السابقة).</li>
+                                        <li>تلوث بيئي كبير بسبب الكثافة الصناعية.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `
+                    }
+                ]
+            },
+            support: {
+                title: "دعم المنصة",
+                icon: "💖",
+                lessons: [
+                    {
+                        id: "s1",
+                        title: "🚀 حسابي على Instagram",
+                        content: `
+                            <div class="flex flex-col items-center justify-center py-10 px-4 text-center fade-in">
+                                <div class="w-32 h-32 bg-gradient-to-tr from-yellow-400 via-rose-500 to-fuchsia-600 rounded-[2.5rem] flex items-center justify-center text-white text-6xl mb-6 shadow-2xl rotate-3 transform transition-transform hover:rotate-6 hover:scale-105 cursor-pointer">
+                                    📸
+                                </div>
+                                <h2 class="text-4xl md:text-5xl font-black mb-4 tracking-tighter text-slate-800 uppercase">Adam Damsiri</h2>
+                                <p class="text-slate-600 mb-8 max-w-md font-medium text-lg">مرحباً بك! إذا أعجبتك المنصة وساعدتك في المراجعة للامتحان الجهوي، دعمني بمتابعتك وتواصل معي لأي مساعدة.</p>
+                                
+                                <a href="https://www.instagram.com/adam_damsiri/" target="_blank" class="group relative bg-slate-900 text-white font-black py-4 px-12 rounded-2xl shadow-2xl overflow-hidden flex items-center gap-3">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <span class="relative z-10 text-xl font-sans tracking-wide">Follow Me</span>
+                                    <span class="relative z-10 text-2xl">👉</span>
+                                </a>
+                                
+                                <div class="mt-16 p-4 border border-dashed border-slate-300 rounded-2xl text-slate-400 font-bold text-sm tracking-widest uppercase">
+                                    Crafted with passion for academic excellence
+                                </div>
+                            </div>
+                        `
                     }
                 ]
             }
         };
 
-        let currentDomain = 'history';
+        let currentDomain = '';
         let currentChartInstance = null;
 
-        function initApp() {
-            switchDomain('history');
-        }
-
         function switchDomain(domain) {
+            if (currentDomain === domain) return;
             currentDomain = domain;
             
-            // Update Tab UI
-            const histTab = document.getElementById('tab-history');
-            const geoTab = document.getElementById('tab-geography');
-            
-            if(domain === 'history') {
-                histTab.className = "px-6 py-2 rounded-lg font-bold transition-all duration-200 bg-history text-white shadow-md";
-                geoTab.className = "px-6 py-2 rounded-lg font-bold text-stone-500 hover:text-stone-800 hover:bg-stone-200 transition-all duration-200";
-            } else {
-                geoTab.className = "px-6 py-2 rounded-lg font-bold transition-all duration-200 bg-geography text-white shadow-md";
-                histTab.className = "px-6 py-2 rounded-lg font-bold text-stone-500 hover:text-stone-800 hover:bg-stone-200 transition-all duration-200";
-            }
+            // 1. Reset all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-white";
+            });
+            // 2. Activate current tab
+            const activeTab = document.getElementById(`tab-${domain}`);
+            activeTab.classList.remove('text-slate-600', 'hover:bg-white');
+            activeTab.classList.add(`active-${domain}`);
 
-            // Update Intro
-            document.getElementById('intro-title').textContent = appData[domain].introTitle;
-            document.getElementById('intro-title').className = `text-xl font-bold mb-2 text-${domain}`;
-            document.getElementById('intro-text').textContent = appData[domain].introText;
+            // 3. Update Sidebar Title
+            document.getElementById('sidebar-title').innerHTML = `<span>${appData[domain].icon}</span> ${appData[domain].title}`;
 
-            // Render Sidebar
+            // 4. Render Lesson List
             renderSidebar();
             
-            // Clear content area
-            document.getElementById('lesson-content').innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full text-stone-400 py-20 animate-pulse">
-                    <span class="text-6xl mb-4">👈</span>
-                    <p class="text-xl font-medium">الرجاء اختيار درس من القائمة الجانبية للبدء</p>
-                </div>
-            `;
-            
-            if(currentChartInstance) {
+            // 5. Show Welcome Message, hide content
+            document.getElementById('welcome-message').classList.remove('hidden');
+            document.getElementById('lesson-content-container').classList.add('hidden');
+            document.getElementById('lesson-content-container').innerHTML = '';
+
+            // Destroy any existing chart
+            if (currentChartInstance) {
                 currentChartInstance.destroy();
                 currentChartInstance = null;
             }
         }
 
         function renderSidebar() {
-            const listContainer = document.getElementById('lesson-list');
-            listContainer.innerHTML = '';
+            const list = document.getElementById('lesson-list');
+            list.innerHTML = '';
             
-            const activeColorClass = currentDomain === 'history' ? 'active-history' : 'active-geography';
-
-            appData[currentDomain].lessons.forEach(lesson => {
+            appData[currentDomain].lessons.forEach((lesson) => {
                 const btn = document.createElement('button');
-                btn.className = `lesson-btn text-right w-full p-3 rounded-xl border border-stone-200 text-stone-600 hover:border-${currentDomain} hover:text-${currentDomain} transition-all duration-200 font-medium text-sm`;
-                btn.textContent = lesson.title;
+                btn.className = `lesson-item text-right w-full p-4 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all font-medium text-sm shadow-sm flex items-center justify-between`;
+                btn.dataset.domain = currentDomain;
+                btn.innerHTML = `<span class="leading-relaxed pl-2">${lesson.title}</span> <span class="text-slate-300">»</span>`;
+                
                 btn.onclick = () => {
-                    // Remove active class from all
-                    document.querySelectorAll('.lesson-btn').forEach(b => {
-                        b.classList.remove('active-history', 'active-geography');
-                        b.classList.add('text-stone-600', 'border-stone-200');
-                    });
-                    // Add active class to clicked
-                    btn.classList.remove('text-stone-600', 'border-stone-200');
-                    btn.classList.add(activeColorClass);
-                    
-                    loadLesson(lesson.id);
+                    // Update active styling in sidebar
+                    document.querySelectorAll('.lesson-item').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadLesson(lesson);
                 };
-                listContainer.appendChild(btn);
+                list.appendChild(btn);
             });
         }
 
-        function loadLesson(lessonId) {
-            const lesson = appData[currentDomain].lessons.find(l => l.id === lessonId);
-            if(!lesson) return;
-
-            const contentContainer = document.getElementById('lesson-content');
+        function loadLesson(lesson) {
+            document.getElementById('welcome-message').classList.add('hidden');
+            const container = document.getElementById('lesson-content-container');
+            container.classList.remove('hidden');
             
-            let htmlContent = lesson.content;
-            
-            if (lesson.chart) {
-                htmlContent += `
-                <div class="mt-8 border-t border-stone-100 pt-8">
-                    <div class="chart-container">
-                        <canvas id="lessonChart"></canvas>
-                    </div>
-                </div>`;
-            }
-
-            contentContainer.innerHTML = htmlContent;
-
-            // Handle Chart rendering
+            // Clear chart instance if exists
             if (currentChartInstance) {
                 currentChartInstance.destroy();
                 currentChartInstance = null;
             }
 
+            // Inject Content with animation
+            let html = `<div class="fade-in prose prose-slate max-w-none">${lesson.content}`;
+            
+            // If chart exists for this lesson, append canvas
             if (lesson.chart) {
-                const ctx = document.getElementById('lessonChart').getContext('2d');
-                
-                // Ensure default font for chart is Tajawal
+                html += `<div class="mt-8 pt-6 border-t border-slate-100"><div class="chart-container"><canvas id="canvasChart"></canvas></div></div>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+
+            // Scroll to top of content on mobile
+            if(window.innerWidth < 1024) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // Render Chart if needed
+            if (lesson.chart) {
+                const ctx = document.getElementById('canvasChart').getContext('2d');
                 Chart.defaults.font.family = 'Tajawal';
-                
                 currentChartInstance = new Chart(ctx, {
                     type: lesson.chart.type,
                     data: lesson.chart.data,
@@ -499,8 +798,13 @@
             }
         }
 
-        // Initialize on load
-        window.addEventListener('DOMContentLoaded', initApp);
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            switchDomain('history');
+        });
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
